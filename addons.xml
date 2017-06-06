@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<addons><addon id="plugin.video.tfctv" name="TFC.tv" provider-name="nuodtayo.tv" version="0.1.0">
+    <requires>
+        <import addon="xbmc.python" version="2.1.0" />
+        <import addon="script.module.parsedom" version="0.9.1" />
+    </requires>
+    <extension library="default.py" point="xbmc.python.pluginsource">
+        <provides>video</provides>
+    </extension>
+  <extension point="xbmc.addon.metadata">
+    <platform>all</platform>
+    <summary>TFC.tv</summary>
+    <description>A valid TFC.tv subscription is required</description>
+  </extension>
+</addon><addon id="repository.nuodtayo.tv.addons" name="nuodtayo.tv Repo" provider-name="nuodtayo.tv" version="0.0.1">
+    <extension name="nuodtayo.tv Repo" point="xbmc.addon.repository">
+        <info compressed="false">https://raw.githubusercontent.com/benaranguren/nuodtayo.tv/master/addons.xml</info>
+        <checksum>https://raw.githubusercontent.com/benaranguren/nuodtayo.tv/master/addons.xml.md5</checksum>
+        <datadir zip="true">https://raw.githubusercontent.com/benaranguren/nuodtayo.tv/master/</datadir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary>XBMC Plugins</summary>
+        <description>Nuodtayo.TV Kodi Repo</description>
+        <disclaimer>Yun lang</disclaimer>
+        <language>en</language>
+        <platform>all</platform>
+    </extension>
+</addon></addons>
