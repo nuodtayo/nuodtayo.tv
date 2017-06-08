@@ -346,11 +346,12 @@ def main():
     parser.add_argument(
         '--datadir',
         '-d',
-        default='.',
+        default='downloads',
         help='Path to place the add-ons [current directory]')
     parser.add_argument(
         '--info',
         '-i',
+        default='addons.xml',
         help='''Path for the addons.xml file [DATADIR/addons.xml or
                 DATADIR/addons.xml.gz if compressed]''')
     parser.add_argument(
