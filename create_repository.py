@@ -191,9 +191,20 @@ def fetch_addon_from_folder(raw_addon_location, target_folder):
         os.mkdir(addon_target_folder)
     archive_path = os.path.join(
         addon_target_folder, get_archive_basename(addon_metadata))
+    exclude = ['.git', '.swo', '.swp', '.pyo']
     with zipfile.ZipFile(
             archive_path, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
         for (root, dirs, files) in os.walk(addon_location):
+            skip = False
+            for e in exclude:
+                if e in root:
+                    skip = True
+                    break
+            if skip:
+                continue
+
+            print 'Adding', root
+
             relative_root = os.path.join(
                 addon_metadata.id,
                 os.path.relpath(root, addon_location))

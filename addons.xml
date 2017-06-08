@@ -12,6 +12,11 @@
     <summary>TFC.tv</summary>
     <description>Yun lang</description>
   </extension>
+  <extension name="nuodtayo.tv Repo" point="xbmc.addon.repository">
+      <info compressed="false">http://github.com/benaranguren/nuodtayo.tv/raw/master/addons.xml</info>
+      <checksum>http://github.com/benaranguren/nuodtayo.tv/raw/master/addons.xml.md5</checksum>
+      <datadir zip="true">http://github.com/benaranguren/nuodtayo.tv/raw/master/downloads</datadir>
+  </extension>
 </addon><addon id="repository.nuodtayo.tv.addons" name="nuodtayo.tv Repo" provider-name="nuodtayo.tv" version="0.0.2">
     <extension name="nuodtayo.tv Repo" point="xbmc.addon.repository">
         <info compressed="false">http://94080.duckdns.org:9000/kodi/nuodtayo.tv/addons.xml</info>
