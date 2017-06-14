@@ -2,3 +2,4 @@ downloads/*.md5
 downloads/*/addon.xml
 downloads/*/icon.png
 downloads/*/*.md5
+*.swp
