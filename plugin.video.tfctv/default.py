@@ -207,6 +207,8 @@ def playEpisode(episode):
 
     if episodeDetails and episodeDetails.get('StatusCode', 0) != 0:
         url = episodeDetails['MediaReturnObj']['uri']
+        # fix pixelation per @cmik tfc.tv v0.0.58
+        url = url.replace('&b=100-1000', '')
 
         liz=xbmcgui.ListItem(name, iconImage = "DefaultVideo.png",
                              thumbnailImage=thumbnail, path=url)
@@ -462,6 +464,8 @@ if this.getSetting('announcement') != this.getAddonInfo('version'):
                  '\n\nPress "Back" to continue.',
         '0.1.5': 'CHANGES'
                  '\n* Fix compatibility with minor web UI update',
+        '0.1.6': 'CHANGES'
+                 '\n* Fix pixelation',
         }
 
     xbmcaddon.Addon().setSetting('announcement',
