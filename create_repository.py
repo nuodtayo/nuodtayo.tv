@@ -368,6 +368,7 @@ def main():
     parser.add_argument(
         '--checksum',
         '-c',
+        default='addons.xml.md5',
         help='Path for the addons.xml.md5 file [DATADIR/addons.xml.md5]')
     parser.add_argument(
         '--compressed',
@@ -378,6 +379,7 @@ def main():
         'addon',
         nargs='*',
         metavar='ADDON',
+        default=['plugin.video.tfctv', 'repository.nuodtayo.tv.addons'],
         help='''Location of the add-on: either a path to a local folder or
                 to a zip archive or a URL for a Git repository with the
                 format REPOSITORY_URL#BRANCH:PATH''')
