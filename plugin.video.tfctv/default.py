@@ -5,6 +5,7 @@ import os.path
 import re
 import sys
 import time
+import urlparse
 import urllib
 import urllib2
 
@@ -22,10 +23,19 @@ common.dbglevel = 3
 
 userAgent = 'Mozilla/5.0 (iPad; CPU OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1'
 
-def showCategories():
+
+class Mode:
+    MAIN_MENU = 0
+    SUB_MENU = 1
+    SHOW_LIST = 2
+    SHOW_INFO = 3
+    PLAY = 4
+
+
+def show_main_menu():
     """Show the main categories
 
-    For TV shows, this is typically: Shows, News, Movies, Live
+    This is typically: Shows, News, Movies, Live
     """
 
     checkAccountChange()
@@ -38,7 +48,7 @@ def showCategories():
         name = common.parseDOM(html, 'a', attrs={'data-id': id})[0]
         href = common.parseDOM(html, 'a', attrs={'data-id': id}, ret='href')[0]
         if id not in processed:
-            addDir(name, href, 1, 'icon.png', data_id=id)
+            addDir(name, href, Mode.SUB_MENU, 'icon.png', data_id=id)
             processed.append(id)
 
     xbmcplugin.endOfDirectory(thisPlugin)
@@ -66,39 +76,31 @@ def showSubCategories(url, category_id):
             for li in common.parseDOM(ul, 'li'):
                 url = common.parseDOM(li, 'a', ret='href')[0]
                 name = common.parseDOM(li, 'a')[0]
-                addDir(common.replaceHTMLCodes(name), url, 2, 'menu_logo.png')
+                addDir(common.replaceHTMLCodes(name), url,
+                       Mode.SHOW_LIST, 'menu_logo.png')
             break
 
     xbmcplugin.endOfDirectory(thisPlugin)
 
-def showShows(categoryId):
+def showShows(category_url):
     """Display all shows under a sub category
 
     params:
-        categoryId: a sub category is assigned a unique id.
+        category_url: a sub category is a unique id
     """
 
-    showListData = get_show_lists(categoryId)
+    showListData = get_show_list(category_url)
     if showListData is None:
         xbmcplugin.endOfDirectory(thisPlugin)
         return
 
-    sortedShowInfos = []
-    for showId, (title, thumbnail) in showListData.iteritems():
-        sortedShowInfos.append((title.lower(), title, str(showId),
-                               3, thumbnail))
+    for show_id, (title, thumbnail) in showListData.iteritems():
+        addDir(title, str(show_id), Mode.SHOW_INFO, thumbnail)
 
-    # sort by show id
-    sortedShowInfos = sorted(sortedShowInfos, key=itemgetter(0))
-
-    for info in sortedShowInfos:
-        addDir(info[1], info[2], info[3], info[4])
-
+    xbmcplugin.addSortMethod(thisPlugin, xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE)
     xbmcplugin.endOfDirectory(thisPlugin)
 
-def get_show_lists(categoryId):
-    url = categoryId
-
+def get_show_list(url):
     # iterate through all the pages
     htmlData = callServiceApi(url)
     show_lists = get_show_data(htmlData)
@@ -107,6 +109,7 @@ def get_show_lists(categoryId):
                             attrs={'id': 'pagination'})
     urls = common.parseDOM(pages, 'a', ret='href')
     for url in urls[1:]:
+        common.log(url)
         htmlData = callServiceApi(url)
         show_lists.update(get_show_data(htmlData))
 
@@ -130,9 +133,64 @@ def get_show_data(htmlContents):
 
     return show_data
 
-def showEpisodes(showId):
+def show_tv_episode_list(show_id, show_details_page, title, page):
 
-    show_details = callServiceApi('/show/details/%s' % (showId))
+    pages = common.parseDOM(show_details_page, 'ul',
+                            attrs={'id': 'pagination'})
+    # url = '/modulebuilder/getepisodes/{}/{}'.format(show_id, page)
+    urls = common.parseDOM(pages, 'a', ret='href')
+
+    episodes_shown = 0
+    exit = False
+    for url in urls[page:]:
+
+        if exit:
+            break
+
+        e = callServiceApi(url)
+        grid_e = common.parseDOM(e, 'ul', attrs={'id': 'og-grid'})[0]
+        desc_list = common.parseDOM(grid_e, 'li',
+                                    attrs={'class': 'og-grid-item'},
+                                    ret='data-show-description')
+        date_list = common.parseDOM(grid_e, 'li',
+                                    attrs={'class': 'og-grid-item'},
+                                    ret='data-aired')
+        show_cover_list = common.parseDOM(grid_e, 'div',
+                                          attrs={'class': 'show-cover'},
+                                          ret='data-src')
+        urls = common.parseDOM(grid_e, 'a', ret='href')
+
+        episode_list = zip(date_list, urls, show_cover_list, desc_list)
+
+        for name, episode_url, image_url, plot in episode_list:
+
+            kwargs = {
+                'listProperties': {
+                    'IsPlayable': 'true'
+                },
+                'listInfos': {
+                    'video': {
+                        'plot': plot, 'title': title,
+                    }
+                }
+            }
+
+            episodes_shown += 1
+            addDir(name, urlparse.urlparse(episode_url).path,
+                   Mode.PLAY, image_url, isFolder=False,
+                   **kwargs)
+
+            if episodes_shown >= int(this.getSetting('itemsPerPage')):
+                addDir('NEXT >>>', show_id, Mode.SHOW_INFO, '', page=page+1)
+                exit = True
+                break
+
+
+    xbmcplugin.endOfDirectory(thisPlugin)
+
+def show_show_info(show_id, page):
+
+    show_details = callServiceApi('/show/details/%s' % (show_id))
 
     # synopsis
     e = common.parseDOM(show_details, 'meta',
@@ -156,47 +214,59 @@ def showEpisodes(showId):
     episode_list = []
 
     if 'modulebuilder' in show_details:
-        episode_data = common.parseDOM(show_details, "select")
-
-        for e in episode_data:
-            episode_hrefs = common.parseDOM(e, "option", ret='value')
-            date = common.parseDOM(e, "option")
-
-            for u, d in zip(episode_hrefs, date):
-                episode_id = u.replace('/episode/details/', '').split('/')[0]
-                episode_date = d.split('-')[-1].strip().encode('utf8')
-                episode_list.append((episode_date, episode_id, image_url))
+        show_tv_episode_list(show_id, show_details, title, page)
     else:
         # no episodes, maybe this is a movie page
 
         e = common.parseDOM(show_details, 'a',
                             attrs={'class': 'hero-image-orange-btn'},
                             ret='href')
-        episode_id = e[0].replace('/episode/details/', '').split('/')[0]
+        if len(e) == 0:
+            # assume live show
+            e = common.parseDOM(show_details, 'meta',
+                                attrs={'property': 'og:url'},
+                                ret='content'
+                               )
+            episode_url = e[0]
+            name = title
+        else:
+            # movies section
+            episode_url = e[0]
+            # title and date
+            topic_bg_e = common.parseDOM(show_details, 'div',
+                                         attrs={'class': 'topic-section-bg'})[0]
+            rating_e = common.parseDOM(topic_bg_e, 'div',
+                                       attrs={'class': 'hero-image-rating'})[0]
+            episode_date = rating_e.split('|')[0].replace('&nbsp;', '').strip()
 
-        # title and date
-        topic_bg_e = common.parseDOM(show_details, 'div',
-                                     attrs={'class': 'topic-section-bg'})[0]
-        rating_e = common.parseDOM(topic_bg_e, 'div',
-                                   attrs={'class': 'hero-image-rating'})[0]
-        episode_date = rating_e.split('|')[0].replace('&nbsp;', '').strip()
+            name = '%s - %s' % (title, episode_date)
 
-        name = '%s - %s' % (title, episode_date)
-        episode_list.append((name, episode_id, image_url))
+        episode_list.append((name, episode_url, image_url))
 
-    kwargs = {'listProperties': {'IsPlayable': 'true'}}
-    kwargs['listInfos'] = {'video': {'plot': plot}}
-    for name, episode_id, image_url in episode_list:
-        addDir(name, episode_id, 4, image_url, isFolder=False, **kwargs)
+        kwargs = {
+            'listProperties': {
+                'IsPlayable': 'true'
+            },
+            'listInfos': {
+                'video': {
+                    'plot': plot, 'title': title,
+                }
+            }
+        }
 
-    xbmcplugin.endOfDirectory(thisPlugin)
+        for name, episode_url, image_url in episode_list:
+            addDir(name, urlparse.urlparse(episode_url).path,
+                   Mode.PLAY, image_url, isFolder=False,
+                   **kwargs)
 
-def playEpisode(episode):
+        xbmcplugin.endOfDirectory(thisPlugin)
+
+def play_video(episode_url, thumbnail):
 
     episodeDetails = {}
 
     for i in range(int(this.getSetting('loginRetries')) + 1):
-        episodeDetails = get_media_info(episode)
+        episodeDetails = get_media_info(episode_url)
         if episodeDetails:
             break
         if episodeDetails and episodeDetails.get('StatusCode', 0) != 0 and \
@@ -206,14 +276,15 @@ def playEpisode(episode):
             login()
 
     if episodeDetails and episodeDetails.get('StatusCode', 0) != 0:
-        url = episodeDetails['MediaReturnObj']['uri']
+        media_url = episodeDetails['MediaReturnObj']['uri']
         # fix pixelation per @cmik tfc.tv v0.0.58
-        url = url.replace('&b=100-1000', '')
+        media_url = media_url.replace('&b=100-1000', '')
 
-        liz=xbmcgui.ListItem(name, iconImage = "DefaultVideo.png",
-                             thumbnailImage=thumbnail, path=url)
-        liz.setInfo(type="Video", infoLabels = { "Title": name })
+        liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png",
+                               thumbnailImage=thumbnail, path=media_url)
+        liz.setInfo(type="Video", infoLabels={"Title": name})
         liz.setProperty('IsPlayable', 'true')
+
         return xbmcplugin.setResolvedUrl(thisPlugin, True, liz)
     else:
         xbmc.executebuiltin('Notification(%s, %s)' % \
@@ -222,11 +293,22 @@ def playEpisode(episode):
                                              subscription.'))
     return False
 
-def get_media_info(episode_id):
+def get_media_info(episode_url):
 
     media_info = None
 
-    html = callServiceApi('/episode/details/%s' % episode_id)
+    common.log(episode_url)
+    pat = re.compile('details/([\d]+)')
+
+    m = pat.search(episode_url)
+    if m:
+        episode_id = m.group(1)
+    else:
+        episode_id = 0
+        common.log('episode_id missing')
+        common.log(episode_url)
+
+    html = callServiceApi(episode_url)
     pattern = re.compile('([^/]+)\?token=([^\s]+)"', re.IGNORECASE)
 
     cookies = []
@@ -326,24 +408,25 @@ def checkAccountChange():
     return accountChanged
 
 def getParams():
-    param={}
-    paramstring=sys.argv[2]
-    if len(paramstring)>=2:
-        params=sys.argv[2]
-        cleanedparams=params.replace('?','')
-        if (params[len(params)-1]=='/'):
-            params=params[0:len(params)-2]
-        pairsofparams=cleanedparams.split('&')
-        param={}
+    param = {}
+    paramstring = sys.argv[2]
+    if len(paramstring) >= 2:
+        params = sys.argv[2]
+        cleanedparams = params.replace('?','')
+        if (params[len(params)-1] == '/'):
+            params = params[0:len(params)-2]
+        pairsofparams = cleanedparams.split('&')
+        param = {}
         for i in range(len(pairsofparams)):
-            splitparams={}
-            splitparams=pairsofparams[i].split('=')
-            if (len(splitparams))==2:
-                param[splitparams[0]]=splitparams[1]
+            splitparams = {}
+            splitparams = pairsofparams[i].split('=')
+            if (len(splitparams)) == 2:
+                param[splitparams[0]] = splitparams[1]
+
     return param
 
 def addDir(name, url, mode, thumbnail, page=0, isFolder=True,
-           data_id=None, **kwargs):
+           data_id=0, **kwargs):
     u = sys.argv[0] + \
             "?url=" + urllib.quote_plus(url) + \
             "&mode=" + str(mode) + \
@@ -396,6 +479,7 @@ if cookieJarType == 'LWPCookieJar':
         common.log(e)
         login()
 
+common.log(sys.argv)
 params = getParams()
 url = None
 name = None
@@ -430,15 +514,15 @@ except:
     pass
 
 if mode == None or url == None or len(url) < 1:
-    showCategories()
-elif mode == 1:
+    show_main_menu()
+elif mode == Mode.SUB_MENU:
     showSubCategories(url, data_id)
-elif mode == 2:
+elif mode == Mode.SHOW_LIST:
     showShows(url)
-elif mode == 3:
-    showEpisodes(url)
-elif mode == 4:
-    playEpisode(url)
+elif mode == Mode.SHOW_INFO:
+    show_show_info(url, page)
+elif mode == Mode.PLAY:
+    play_video(url, thumbnail)
 
 if cookieJarType == 'LWPCookieJar':
     cookieJar.save()
@@ -466,6 +550,8 @@ if this.getSetting('announcement') != this.getAddonInfo('version'):
                  '\n* Fix compatibility with minor web UI update',
         '0.1.6': 'CHANGES'
                  '\n* Fix pixelation',
+        '0.1.7': 'CHANGES'
+                 '\n* Fix live TV shows',
         }
 
     xbmcaddon.Addon().setSetting('announcement',
