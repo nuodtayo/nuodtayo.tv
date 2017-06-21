@@ -133,16 +133,26 @@ def get_show_data(htmlContents):
 
     return show_data
 
-def show_tv_episode_list(show_id, show_details_page, title, page):
+def show_tv_episode_list(show_id, show_details_page, title, page, page_item):
+    """Construct a list of episodes
+    
+    Args:
+        show_id: a unique show identifier
+        show_details_page: html source of the show details page
+        title: this show's title
+        page: start with this page
+        page_item: start with this item in the list within this page
+    """
 
     pages = common.parseDOM(show_details_page, 'ul',
                             attrs={'id': 'pagination'})
-    # url = '/modulebuilder/getepisodes/{}/{}'.format(show_id, page)
     urls = common.parseDOM(pages, 'a', ret='href')
 
+    page_offset = page
+    episode_offset = page_item
     episodes_shown = 0
     exit = False
-    for url in urls[page:]:
+    for url in urls[page_offset:]:
 
         if exit:
             break
@@ -160,9 +170,10 @@ def show_tv_episode_list(show_id, show_details_page, title, page):
                                           ret='data-src')
         urls = common.parseDOM(grid_e, 'a', ret='href')
 
-        episode_list = zip(date_list, urls, show_cover_list, desc_list)
+        episodes_in_page = zip(date_list, urls, show_cover_list, desc_list)
 
-        for name, episode_url, image_url, plot in episode_list:
+        for name, episode_url, image_url, plot in \
+                episodes_in_page[episode_offset:]:
 
             kwargs = {
                 'listProperties': {
@@ -176,19 +187,25 @@ def show_tv_episode_list(show_id, show_details_page, title, page):
             }
 
             episodes_shown += 1
+            episode_offset += 1
             addDir(name, urlparse.urlparse(episode_url).path,
                    Mode.PLAY, image_url, isFolder=False,
                    **kwargs)
-
             if episodes_shown >= int(this.getSetting('itemsPerPage')):
-                addDir('NEXT >>>', show_id, Mode.SHOW_INFO, '', page=page+1)
+                addDir('NEXT >>>', show_id, Mode.SHOW_INFO, '',
+                       page=page_offset,
+                       page_item=episode_offset)
                 exit = True
                 break
 
+        if episode_offset > len(episodes_in_page) - 1:
+            # parsed all episodes in this page
+            page_offset += 1
+            episode_offset = 0
 
     xbmcplugin.endOfDirectory(thisPlugin)
 
-def show_show_info(show_id, page):
+def show_show_info(show_id, page, page_item):
 
     show_details = callServiceApi('/show/details/%s' % (show_id))
 
@@ -214,7 +231,7 @@ def show_show_info(show_id, page):
     episode_list = []
 
     if 'modulebuilder' in show_details:
-        show_tv_episode_list(show_id, show_details, title, page)
+        show_tv_episode_list(show_id, show_details, title, page, page_item)
     else:
         # no episodes, maybe this is a movie page
 
@@ -426,15 +443,18 @@ def getParams():
     return param
 
 def addDir(name, url, mode, thumbnail, page=0, isFolder=True,
-           data_id=0, **kwargs):
-    u = sys.argv[0] + \
-            "?url=" + urllib.quote_plus(url) + \
-            "&mode=" + str(mode) + \
-            "&name=" +urllib.quote_plus(name) + \
-            "&page=" + str(page) + \
-            "&thumbnail=" + urllib.quote_plus(thumbnail) + \
-            "&data_id=" + str(data_id)
-
+           data_id=0, page_item=0, **kwargs):
+    u = ('{}?url={}&mode={}&name={}&page={}'
+         '&thumbnail={}&data_id={}&page_item={}'.format(
+            sys.argv[0],
+            urllib.quote_plus(url),
+            str(mode),
+            urllib.quote_plus(name),
+            str(page),
+            urllib.quote_plus(thumbnail),
+            str(data_id),
+            str(page_item),
+        ))
     liz = xbmcgui.ListItem(name, iconImage="DefaultFolder.png",
                            thumbnailImage=thumbnail)
     liz.setInfo( type="Video", infoLabels={ "Title": name } )
@@ -486,7 +506,6 @@ name = None
 mode = None
 page = 0
 thumbnail = ''
-data_id = '0'
 
 try:
     url = urllib.unquote_plus(params["url"])
@@ -508,10 +527,9 @@ try:
     thumbnail = urllib.unquote_plus(params["thumbnail"])
 except:
     pass
-try:
-    data_id = params["data_id"]
-except:
-    pass
+
+data_id = int(params.get('data_id', 0))
+page_item = int(params.get('page_item', 0))
 
 if mode == None or url == None or len(url) < 1:
     show_main_menu()
@@ -520,7 +538,7 @@ elif mode == Mode.SUB_MENU:
 elif mode == Mode.SHOW_LIST:
     showShows(url)
 elif mode == Mode.SHOW_INFO:
-    show_show_info(url, page)
+    show_show_info(url, page, page_item)
 elif mode == Mode.PLAY:
     play_video(url, thumbnail)
 
