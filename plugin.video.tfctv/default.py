@@ -70,7 +70,7 @@ def showSubCategories(url, category_id):
         common.parseDOM(main_nav, 'li', attrs={'class': 'has_children'})
 
     for sc in sub_categories:
-        a = common.parseDOM(sc, 'a', attrs={'data-id': category_id})
+        a = common.parseDOM(sc, 'a', attrs={'data-id': str(category_id)})
         if len(a) > 0:
             ul = common.parseDOM(sc, 'ul', attrs={'class': 'menu_item'})[0]
             for li in common.parseDOM(ul, 'li'):
@@ -100,25 +100,24 @@ def showShows(category_url):
     xbmcplugin.addSortMethod(thisPlugin, xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE)
     xbmcplugin.endOfDirectory(thisPlugin)
 
-def get_show_list(url):
+def get_show_list(catgory_url):
     # iterate through all the pages
-    htmlData = callServiceApi(url)
-    show_lists = get_show_data(htmlData)
+    category_page = callServiceApi(catgory_url)
+    show_lists = parse_category_list(category_page)
 
-    pages = common.parseDOM(htmlData, 'ul',
-                            attrs={'id': 'pagination'})
-    urls = common.parseDOM(pages, 'a', ret='href')
-    for url in urls[1:]:
-        common.log(url)
-        htmlData = callServiceApi(url)
-        show_lists.update(get_show_data(htmlData))
+    e = common.parseDOM(category_page, 'ul',
+                        attrs={'id': 'pagination'})
+    pages = common.parseDOM(e, 'a', ret='href')
+    for page in pages[1:]:
+        common.log(page)
+        category_page = callServiceApi(page)
+        show_lists.update(parse_category_list(category_page))
 
     return show_lists
 
-def get_show_data(htmlContents):
+def parse_category_list(html):
 
-    section = common.parseDOM(htmlContents, "div",
-                              attrs={'class': 'main'})
+    section = common.parseDOM(html, "div", attrs={'class': 'main'})
     show_data = {}
     for header in section:
         shows = common.parseDOM(header, 'li')
@@ -135,7 +134,7 @@ def get_show_data(htmlContents):
 
 def show_tv_episode_list(show_id, show_details_page, title, page, page_item):
     """Construct a list of episodes
-    
+
     Args:
         show_id: a unique show identifier
         show_details_page: html source of the show details page
@@ -209,46 +208,58 @@ def show_show_info(show_id, page, page_item):
 
     show_details = callServiceApi('/show/details/%s' % (show_id))
 
-    # synopsis
-    e = common.parseDOM(show_details, 'meta',
-                        attrs={'property': 'og:description'},
-                        ret='content'
-                       )
-    plot = common.replaceHTMLCodes(e[0])
     e = common.parseDOM(show_details, 'meta',
                         attrs={'property': 'og:title'},
                         ret='content'
                        )
     title = common.replaceHTMLCodes(e[0])
-
-    # logo
-    e = common.parseDOM(show_details, 'meta',
-                        attrs={'property': 'og:image'},
-                        ret='content'
-                       )
-    image_url = common.replaceHTMLCodes(e[0])
-
-    episode_list = []
-
     if 'modulebuilder' in show_details:
+        # multiple episodes exist
         show_tv_episode_list(show_id, show_details, title, page, page_item)
     else:
-        # no episodes, maybe this is a movie page
+        # single episode.  There should be a direct link to the video
 
-        e = common.parseDOM(show_details, 'a',
-                            attrs={'class': 'hero-image-orange-btn'},
-                            ret='href')
-        if len(e) == 0:
-            # assume live show
-            e = common.parseDOM(show_details, 'meta',
-                                attrs={'property': 'og:url'},
-                                ret='content'
-                               )
-            episode_url = e[0]
-            name = title
-        else:
+        MOVIE = 0
+        SHOW = 1
+        LIVE = 2
+
+        category = -1
+
+        # logo
+        e = common.parseDOM(show_details, 'meta',
+                            attrs={'property': 'og:image'},
+                            ret='content'
+                           )
+        image_url = common.replaceHTMLCodes(e[0])
+
+        # synopsis
+        e = common.parseDOM(show_details, 'meta',
+                            attrs={'property': 'og:description'},
+                            ret='content'
+                           )
+        plot = common.replaceHTMLCodes(e[0])
+
+        episode_url_dom = [
+            # movies
+            (MOVIE, 'a',
+                {'attrs': {'class': 'hero-image-orange-btn'}, 'ret': 'href'}),
+            # shows/specials, shows/sports, episode also has this link
+            (SHOW, 'a',
+                {'attrs': {'class': 'link-to-episode'}, 'ret': 'href'}),
+            # live show
+            (LIVE, 'meta',
+                {'attrs': {'property': 'og:url'}, 'ret': 'content'})
+        ]
+        for id, element, kwargs in episode_url_dom:
+            e = common.parseDOM(show_details, element, **kwargs)
+            if len(e) > 0:
+                episode_url = urlparse.urlparse(e[0]).path
+                name = title
+                category = id
+                break
+
+        if id == MOVIE:
             # movies section
-            episode_url = e[0]
             # title and date
             topic_bg_e = common.parseDOM(show_details, 'div',
                                          attrs={'class': 'topic-section-bg'})[0]
@@ -257,8 +268,6 @@ def show_show_info(show_id, page, page_item):
             episode_date = rating_e.split('|')[0].replace('&nbsp;', '').strip()
 
             name = '%s - %s' % (title, episode_date)
-
-        episode_list.append((name, episode_url, image_url))
 
         kwargs = {
             'listProperties': {
@@ -271,10 +280,9 @@ def show_show_info(show_id, page, page_item):
             }
         }
 
-        for name, episode_url, image_url in episode_list:
-            addDir(name, urlparse.urlparse(episode_url).path,
-                   Mode.PLAY, image_url, isFolder=False,
-                   **kwargs)
+        addDir(name, episode_url,
+               Mode.PLAY, image_url, isFolder=False,
+               **kwargs)
 
         xbmcplugin.endOfDirectory(thisPlugin)
 
@@ -308,7 +316,6 @@ def play_video(episode_url, thumbnail):
                             ('Media Error', 'Subscription is already expired \
                                              or the item is not part of your \
                                              subscription.'))
-    return False
 
 def get_media_info(episode_url):
 
@@ -471,7 +478,7 @@ def addDir(name, url, mode, thumbnail, page=0, isFolder=True,
                                        listitem=liz,
                                        isFolder=isFolder)
 
-def showMessage(message, title = xbmcaddon.Addon().getLocalizedString(50107)):
+def showMessage(message, title=xbmcaddon.Addon().getLocalizedString(50107)):
     if not message:
         return
     xbmc.executebuiltin("ActivateWindow(%d)" % (10147, ))
