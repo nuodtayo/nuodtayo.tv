@@ -7,7 +7,11 @@ import sys
 import time
 import urlparse
 # import this before urllib2 to fix urlopen error 0
-import OpenSSL
+try:
+    import OpenSSL
+except:
+    # only needed on nix machines?
+    pass
 import urllib
 import urllib2
 
@@ -456,8 +460,8 @@ def getParams():
 
 def addDir(name, url, mode, thumbnail, page=0, isFolder=True,
            data_id=0, page_item=0, **kwargs):
-    u = ('{}?url={}&mode={}&name={}&page={}'
-         '&thumbnail={}&data_id={}&page_item={}'.format(
+    u = ('%s?url=%s&mode=%s&name=%s&page=%s' \
+         '&thumbnail=%s&data_id=%s&page_item=%s' % (
             sys.argv[0],
             urllib.quote_plus(url),
             str(mode),
@@ -465,7 +469,7 @@ def addDir(name, url, mode, thumbnail, page=0, isFolder=True,
             str(page),
             urllib.quote_plus(thumbnail),
             str(data_id),
-            str(page_item),
+            str(page_item)
         ))
     liz = xbmcgui.ListItem(name, iconImage="DefaultFolder.png",
                            thumbnailImage=thumbnail)
