@@ -6,6 +6,8 @@ import re
 import sys
 import time
 import urlparse
+# import this before urllib2 to fix urlopen error 0
+import OpenSSL
 import urllib
 import urllib2
 
@@ -22,6 +24,10 @@ common.dbg = True
 common.dbglevel = 3
 
 userAgent = 'Mozilla/5.0 (iPad; CPU OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1'
+
+user_data_dir = xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))
+COOKIEFILE = os.path.join(user_data_dir, 'tfctv.cookie')
+cookie_jar = cookielib.LWPCookieJar(COOKIEFILE)
 
 
 class Mode:
@@ -292,15 +298,12 @@ def play_video(episode_url, thumbnail):
 
     for i in range(int(this.getSetting('loginRetries')) + 1):
         episodeDetails = get_media_info(episode_url)
-        if episodeDetails:
-            break
-        if episodeDetails and episodeDetails.get('StatusCode', 0) != 0 and \
-                episodeDetails.get('UserType', 'GUEST') == 'REGISTERED':
+        if episodeDetails and episodeDetails.get('StatusCode', 0) == 1:
             break
         else:
             login()
 
-    if episodeDetails and episodeDetails.get('StatusCode', 0) != 0:
+    if episodeDetails and episodeDetails.get('StatusCode', 0) == 1:
         media_url = episodeDetails['MediaReturnObj']['uri']
         # fix pixelation per @cmik tfc.tv v0.0.58
         media_url = media_url.replace('&b=100-1000', '')
@@ -312,10 +315,12 @@ def play_video(episode_url, thumbnail):
 
         return xbmcplugin.setResolvedUrl(thisPlugin, True, liz)
     else:
+        default_msg = 'Subscription is already expired \
+                       or the item is not part of your \
+                       subscription.'
+        status_msg = episodeDetails.get('StatusMessage', default_msg)
         xbmc.executebuiltin('Notification(%s, %s)' % \
-                            ('Media Error', 'Subscription is already expired \
-                                             or the item is not part of your \
-                                             subscription.'))
+                            ('Media Error', status_msg))
 
 def get_media_info(episode_url):
 
@@ -336,7 +341,7 @@ def get_media_info(episode_url):
     pattern = re.compile('([^/]+)\?token=([^\s]+)"', re.IGNORECASE)
 
     cookies = []
-    for c in cookieJar:
+    for c in cookie_jar:
         cookies.append('%s=%s' % (c.name, c.value))
     cookies.append('cc_fingerprintid=%s' % \
                     (hashlib.md5(
@@ -372,7 +377,7 @@ def callServiceApi(path, params=None, headers=None, base_url=baseUrl,
     if not headers:
         headers = []
 
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookieJar))
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
 
     headers.append(('User-Agent', userAgent))
     opener.addheaders = headers
@@ -387,7 +392,7 @@ def callServiceApi(path, params=None, headers=None, base_url=baseUrl,
     return response.read()
 
 def login():
-    cookieJar.clear()
+    cookie_jar.clear()
     login_page = callServiceApi("/user/login")
     form_login = common.parseDOM(login_page, "form", attrs = {'id' : 'form1'})
     request_verification_token = common.parseDOM(
@@ -489,22 +494,11 @@ def showMessage(message, title=xbmcaddon.Addon().getLocalizedString(50107)):
 
 thisPlugin = int(sys.argv[1])
 
-cookieJar = cookielib.CookieJar()
-cookieFile = ''
-cookieJarType = ''
-if os.path.exists(
-        xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))):
-    cookieFile = os.path.join(xbmc.translatePath(
-            xbmcaddon.Addon().getAddonInfo('profile')), 'tfctv.cookie')
-    cookieJar = cookielib.LWPCookieJar(cookieFile)
-    cookieJarType = 'LWPCookieJar'
-
-if cookieJarType == 'LWPCookieJar':
-    try:
-        cookieJar.load()
-    except Exception as e:
-        common.log(e)
-        login()
+try:
+    cookie_jar.load()
+except Exception as e:
+    common.log(e)
+    login()
 
 common.log(sys.argv)
 params = getParams()
@@ -549,15 +543,13 @@ elif mode == Mode.SHOW_INFO:
 elif mode == Mode.PLAY:
     play_video(url, thumbnail)
 
-if cookieJarType == 'LWPCookieJar':
-    cookieJar.save()
+# before we leave, save the current cookies
+cookie_jar.save()
 
 if this.getSetting('announcement') != this.getAddonInfo('version'):
-    cookieJar.clear()
+    cookie_jar.clear()
     try:
-        cookieFile = os.path.join(xbmc.translatePath(
-                xbmcaddon.Addon().getAddonInfo('profile')), 'tfctv.cookie')
-        os.remove(cookieFile)
+        os.remove(COOKIEFILE)
     except:
         pass
 
