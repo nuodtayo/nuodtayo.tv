@@ -379,7 +379,7 @@ def main():
         'addon',
         nargs='*',
         metavar='ADDON',
-        default=['plugin.video.tfctv',],
+        default=['plugin.video.tfctv', 'repository.nuodtayo.tv.addons'],
         help='''Location of the add-on: either a path to a local folder or
                 to a zip archive or a URL for a Git repository with the
                 format REPOSITORY_URL#BRANCH:PATH''')

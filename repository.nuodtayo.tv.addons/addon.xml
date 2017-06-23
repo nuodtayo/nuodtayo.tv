@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="repository.nuodtayo.tv.addons" name="nuodtayo.tv Repo" version="0.0.3" provider-name="nuodtayo.tv">
+    <extension point="xbmc.addon.repository" name="nuodtayo.tv Repo">
+        <info compressed="false">http://github.com/benaranguren/nuodtayo.tv/raw/master/addons.xml</info>
+        <checksum>http://github.com/benaranguren/nuodtayo.tv/raw/master/addons.xml.md5</checksum>
+        <datadir zip="true">http://github.com/benaranguren/nuodtayo.tv/raw/master/downloads</datadir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary>XBMC Plugins</summary>
+        <description>Nuodtayo.TV Kodi Repo</description>
+        <disclaimer>Yun lang</disclaimer>
+        <language>en</language>
+        <platform>all</platform>
+    </extension>
+</addon>
