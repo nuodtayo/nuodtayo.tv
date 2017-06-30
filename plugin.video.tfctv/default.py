@@ -40,6 +40,7 @@ class Mode:
     SHOW_LIST = 2
     SHOW_INFO = 3
     PLAY = 4
+    CLEAR_COOKIES = 5
 
 
 def show_main_menu():
@@ -60,6 +61,8 @@ def show_main_menu():
         if id not in processed:
             addDir(name, href, Mode.SUB_MENU, 'icon.png', data_id=id)
             processed.append(id)
+
+    addDir('Clear cookies', '/', Mode.CLEAR_COOKIES, 'icon.png', isFolder=False)
 
     xbmcplugin.endOfDirectory(thisPlugin)
 
@@ -487,7 +490,7 @@ def addDir(name, url, mode, thumbnail, page=0, isFolder=True,
                                        listitem=liz,
                                        isFolder=isFolder)
 
-def showMessage(message, title=xbmcaddon.Addon().getLocalizedString(50107)):
+def show_message(message, title=xbmcaddon.Addon().getLocalizedString(50107)):
     if not message:
         return
     xbmc.executebuiltin("ActivateWindow(%d)" % (10147, ))
@@ -495,6 +498,12 @@ def showMessage(message, title=xbmcaddon.Addon().getLocalizedString(50107)):
     xbmc.sleep(100)
     win.getControl(1).setLabel(title)
     win.getControl(5).setText(message)
+
+def clear_cookies():
+    try:
+        os.remove(COOKIEFILE)
+    except:
+        pass
 
 thisPlugin = int(sys.argv[1])
 
@@ -546,38 +555,15 @@ elif mode == Mode.SHOW_INFO:
     show_show_info(url, page, page_item)
 elif mode == Mode.PLAY:
     play_video(url, thumbnail)
+elif mode == Mode.CLEAR_COOKIES:
+    clear_cookies()
+    common.log(this)
+    xbmc.executebuiltin('Notification(%s, %s)' % \
+                        ('Cookies Removed', ''))
+    
 
 # before we leave, save the current cookies
 cookie_jar.save()
 
 if this.getSetting('announcement') != this.getAddonInfo('version'):
-    cookie_jar.clear()
-    try:
-        os.remove(COOKIEFILE)
-    except:
-        pass
-
-    messages = {
-        '0.1.0': 'Your TFC.tv addon has been updated.',
-        '0.1.1': 'Your TFC.tv addon has been updated.',
-        '0.1.2': 'Movies should work now.\n\nPress "Back" to continue.',
-        '0.1.3': 'Movies should work now.'
-                 '\n\nPress "Back" to continue.',
-        '0.1.4': 'CHANGES'
-                 '\n* Fix version not updated'
-                 '\n* Increase request timeout'
-                 '\n\nPress "Back" to continue.',
-        '0.1.5': 'CHANGES'
-                 '\n* Fix compatibility with minor web UI update',
-        '0.1.6': 'CHANGES'
-                 '\n* Fix pixelation',
-        '0.1.7': 'CHANGES'
-                 '\n* Fix live TV shows',
-        }
-
-    xbmcaddon.Addon().setSetting('announcement',
-                                 this.getAddonInfo('version'))
-
-    if this.getAddonInfo('version') in messages:
-        showMessage(messages[this.getAddonInfo('version')],
-                    xbmcaddon.Addon().getLocalizedString(50106))
+    clear_cookies()

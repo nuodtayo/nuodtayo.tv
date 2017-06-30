@@ -1,0 +1,13 @@
+0.1.9
+	* Add clear cookies
+0.1.8
+	* Bug fix
+0.1.7
+  * Fix live TV shows
+0.1.6
+	* Fix pixelation
+0.1.5
+	* Fix compatibility with minor web UI update
+0.1.4
+  * Fix version not updated
+  * Increase request timeout
