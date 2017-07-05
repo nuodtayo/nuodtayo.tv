@@ -313,7 +313,9 @@ def play_video(episode_url, thumbnail):
     if episodeDetails and episodeDetails.get('StatusCode', 0) == 1:
         media_url = episodeDetails['MediaReturnObj']['uri']
         # fix pixelation per @cmik tfc.tv v0.0.58
-        media_url = media_url.replace('&b=100-1000', '')
+        media_url = media_url.replace('&b=100-1000', '&b=2000-4000')
+        # fix issue #5 per @gwapoman
+        media_url = media_url.replace('http://o2-i.', 'https://life-vh.')
 
         liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png",
                                thumbnailImage=thumbnail, path=media_url)
