@@ -313,9 +313,15 @@ def play_video(episode_url, thumbnail):
     if episodeDetails and episodeDetails.get('StatusCode', 0) == 1:
         media_url = episodeDetails['MediaReturnObj']['uri']
         # fix pixelation per @cmik tfc.tv v0.0.58
-        media_url = media_url.replace('&b=100-1000', '&b=2000-4000')
+        media_url = media_url.replace('&b=100-1000', '')
         # fix issue #5 per @gwapoman
-        media_url = media_url.replace('http://o2-i.', 'https://life-vh.')
+        #media_url = media_url.replace('&b=100-1000', '&b=2000-4000')
+        #media_url = media_url.replace('http://o2-i.', 'https://life-vh.')
+
+        # fix #9 per cmik.  Only apply if it's non live show
+        common.log(episodeDetails['MediaReturnObj']['live'] == False)
+        if not episodeDetails['MediaReturnObj']['live']:
+            media_url = media_url.replace('http://o2-i.', 'https://o4-vh.')
 
         liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png",
                                thumbnailImage=thumbnail, path=media_url)

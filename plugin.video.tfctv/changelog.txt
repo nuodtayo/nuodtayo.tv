@@ -1,3 +1,6 @@
+0.1.11
+	* fix HD quality per cmik
+	* fix #9
 0.1.10
 	* Fix HD video quality
 0.1.9
