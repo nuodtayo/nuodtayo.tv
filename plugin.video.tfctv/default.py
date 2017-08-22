@@ -313,10 +313,14 @@ def play_video(episode_url, thumbnail):
     if episodeDetails and episodeDetails.get('StatusCode', 0) == 1:
         media_url = episodeDetails['MediaReturnObj']['uri']
         # fix pixelation per @cmik tfc.tv v0.0.58
-        media_url = media_url.replace('&b=100-1000', '')
+        #media_url = media_url.replace('&b=100-1000', '')
         # fix issue #5 per @gwapoman
         #media_url = media_url.replace('&b=100-1000', '&b=2000-4000')
         #media_url = media_url.replace('http://o2-i.', 'https://life-vh.')
+
+        # re-enable bw limiting in v0.1.12. Streams has very variable rate and
+        # without this limits, the stream will drop.
+        media_url = media_url.replace('&b=100-1000', '&b=100-6000')
 
         # fix #9 per cmik.  Only apply if it's non live show
         common.log(episodeDetails['MediaReturnObj']['live'] == False)
