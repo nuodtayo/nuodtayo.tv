@@ -390,7 +390,7 @@ def get_media_info(episode_url):
     return media_info
 
 def callServiceApi(path, params=None, headers=None, base_url=baseUrl,
-                   timeout=20):
+                   timeout=60):
     if not params:
         params = {}
     if not headers:
