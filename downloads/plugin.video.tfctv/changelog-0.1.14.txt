@@ -1,5 +1,3 @@
-0.1.14
-	* add cc_fingerprintid setting
 0.1.13
 	* increase default http timeout
 0.1.12

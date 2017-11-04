@@ -362,9 +362,10 @@ def get_media_info(episode_url):
     cookies = []
     for c in cookie_jar:
         cookies.append('%s=%s' % (c.name, c.value))
-    cookies.append('cc_fingerprintid=%s' % \
-                    (hashlib.md5(
-                        this.getSetting('emailAddress')).hexdigest()))
+    fid = this.getSetting('fid')
+    if fid == '':
+        fid = hashlib.md5(this.getSetting('emailAddress')).hexdigest()
+    cookies.append('cc_fingerprintid=%s' % fid)
 
     match = pattern.search(html)
     if match:
