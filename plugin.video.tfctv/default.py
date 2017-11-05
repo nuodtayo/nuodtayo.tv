@@ -2,6 +2,7 @@ import cookielib
 import hashlib
 import json
 import os.path
+import random
 import re
 import sys
 import time
@@ -362,9 +363,10 @@ def get_media_info(episode_url):
     cookies = []
     for c in cookie_jar:
         cookies.append('%s=%s' % (c.name, c.value))
-    fid = this.getSetting('fid')
-    if fid == '':
-        fid = hashlib.md5(this.getSetting('emailAddress')).hexdigest()
+    # I understand now the purpose of cc_fingerprintid better based on
+    # cmik v0.0.69 fix.
+    fid = hashlib.md5(
+        this.getSetting('emailAddress') + str(random.randint(0,1e6))).hexdigest()
     cookies.append('cc_fingerprintid=%s' % fid)
 
     match = pattern.search(html)
