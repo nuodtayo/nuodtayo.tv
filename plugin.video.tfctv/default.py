@@ -381,7 +381,8 @@ def get_media_info(episode_url):
             ('Cookie', '; '.join(cookies)),
         ]
         response = callServiceApi('/media/get',
-                                  params={'id': episode_id, 'pv': False},
+                                  params={'id': episode_id, 'pv': False,
+                                          'sk': fid},
                                   headers=headers)
         common.log('MEDIA_INFO')
         common.log(response)
