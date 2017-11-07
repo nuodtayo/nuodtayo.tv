@@ -313,20 +313,19 @@ def play_video(episode_url, thumbnail):
 
     if episodeDetails and episodeDetails.get('StatusCode', 0) == 1:
         media_url = episodeDetails['MediaReturnObj']['uri']
-        # fix pixelation per @cmik tfc.tv v0.0.58
-        #media_url = media_url.replace('&b=100-1000', '')
-        # fix issue #5 per @gwapoman
-        #media_url = media_url.replace('&b=100-1000', '&b=2000-4000')
-        #media_url = media_url.replace('http://o2-i.', 'https://life-vh.')
-
-        # re-enable bw limiting in v0.1.12. Streams has very variable rate and
-        # without this limits, the stream will drop.
-        media_url = media_url.replace('&b=100-1000', '&b=100-6000')
-
-        # fix #9 per cmik.  Only apply if it's non live show
         common.log(episodeDetails['MediaReturnObj']['live'] == False)
         if not episodeDetails['MediaReturnObj']['live']:
-            media_url = media_url.replace('http://o2-i.', 'https://o4-vh.')
+            # re-enable bw limiting in v0.1.12. Streams has very variable rate
+            # and without this limits, the stream will drop.
+            media_url = media_url.replace('&b=100-1000', '&b=100-6000')
+            server_override_enable = this.getSetting('server_override_enable')
+            server_override_url = this.getSetting('server_override_url')
+            common.log('#'*30)
+            common.log(server_override_url)
+            common.log(server_override_enable)
+            if server_override_enable.lower() == 'true' and server_override_url:
+                media_url = media_url.replace('http://o2-i.',
+                                              server_override_url)
 
         liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png",
                                thumbnailImage=thumbnail, path=media_url)
@@ -366,7 +365,7 @@ def get_media_info(episode_url):
     # I understand now the purpose of cc_fingerprintid better based on
     # cmik v0.0.69 fix.
     fid = hashlib.md5(
-        this.getSetting('emailAddress') + str(random.randint(0,1e6))).hexdigest()
+        this.getSetting('emailAddress')+str(random.randint(0,1e6))).hexdigest()
     cookies.append('cc_fingerprintid=%s' % fid)
 
     match = pattern.search(html)

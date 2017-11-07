@@ -3,7 +3,6 @@
     <category label="50100">
         <setting id="emailAddress" type="text" label="50201" default=""/>
         <setting label="50202" type="text" id="password" option="hidden" enable="!eq(-1,)" default=""/>
-        <setting id="fid" type="text" label="50204" default="041717"/>
         <setting id="loginRetries" type="labelenum" label="50203" default="1" values="1|2|3" visible="false"/>
         <setting type="sep" />
         <setting id="itemsPerPage" type="labelenum" label="50101" default="10" values="10|20|30|40|50"/>
@@ -11,5 +10,9 @@
         <setting id="italiciseUnsubscribed" type="bool" label="50104" default="true" visible="false"/>
         <setting id="showSubscribedShowsThumbnails" type="bool" label="50105" default="false" visible="false"/>
         <setting id="announcement" type="text" label="50106" default="" visible="false"/>
+        <setting type="sep" />
+        <setting id="server_override_enable" type="bool" label="50205" default="false"/>
+        <setting id="server_override_url" type="text" label="50206" default="https://o4-vh."/>
+        <setting id="fid" type="text" label="50204" default="041717" option="hidden"/>
     </category>
 </settings>
