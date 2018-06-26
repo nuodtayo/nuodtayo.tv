@@ -312,9 +312,12 @@ def play_video(episode_url, thumbnail):
             login()
 
     if episodeDetails and episodeDetails.get('StatusCode', 0) == 1:
-        media_url = episodeDetails['MediaReturnObj']['uri']
-        common.log(episodeDetails['MediaReturnObj']['live'] == False)
-        if not episodeDetails['MediaReturnObj']['live']:
+        media_url = None
+        media = episodeDetails.get('media', {})
+        for i in media.get('source', []):
+            if not i.get('src', None) is None:
+                media_url = i['src']
+        if not episodeDetails['mediainfo']['live']:
             # re-enable bw limiting in v0.1.12. Streams has very variable rate
             # and without this limits, the stream will drop.
             media_url = media_url.replace('&b=100-1000', '&b=100-6000')
@@ -357,7 +360,7 @@ def get_media_info(episode_url):
         common.log(episode_url)
 
     html = callServiceApi(episode_url)
-    pattern = re.compile('([^/]+)\?token=([^\s]+)"', re.IGNORECASE)
+    show_ids = common.parseDOM(html, 'div', ret='data-sid')
 
     cookies = []
     for c in cookie_jar:
@@ -368,27 +371,24 @@ def get_media_info(episode_url):
         this.getSetting('emailAddress')+str(random.randint(0,1e6))).hexdigest()
     cookies.append('cc_fingerprintid=%s' % fid)
 
-    match = pattern.search(html)
-    if match:
-        media_token = match.group(2)
+    if len(show_ids) > 0:
+        show_id = show_ids[0]
         headers = [
             ('Host', 'tfc.tv'),
             ('Accept', 'application/json, text/javascript, */*; q=0.01'),
             ('X-Requested-With', 'XMLHttpRequest'),
-            ('mediaToken', media_token),
             ('Content-Type', "application/x-www-form-urlencoded; charset=UTF-8"),
             ('Cookie', '; '.join(cookies)),
         ]
-        response = callServiceApi('/media/get',
-                                  params={'id': episode_id, 'pv': False,
-                                          'sk': fid},
+        response = callServiceApi('/media/fetch',
+                                  params={'eid': episode_id, 'pv': False,
+                                          'sid': show_id},
                                   headers=headers)
         common.log('MEDIA_INFO')
         common.log(response)
-        common.log(match.group(0))
-        common.log(match.group(1))
-        common.log(match.group(2))
         media_info = json.loads(response)
+    else:
+        common.log('SHOW ID NOT FOUND')
 
     return media_info
 
