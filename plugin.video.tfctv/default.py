@@ -381,8 +381,10 @@ def get_media_info(episode_url):
             ('Cookie', '; '.join(cookies)),
         ]
         response = callServiceApi('/media/fetch',
-                                  params={'eid': episode_id, 'pv': False,
+                                  params={'eid': episode_id,
+					  'pv': False,
                                           'sid': show_id},
+			          base_url='https://tfc.tv',
                                   headers=headers)
         common.log('MEDIA_INFO')
         common.log(response)
