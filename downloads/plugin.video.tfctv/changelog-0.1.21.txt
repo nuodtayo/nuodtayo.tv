@@ -1,0 +1,36 @@
+0.1.20
+	* use https for /media/fetch
+0.1.19
+	* TFC API update
+0.1.18
+	* server override
+0.1.17
+	* add sk
+0.1.16
+	* use a random fid
+0.1.15
+	* use a default value for fid
+0.1.14
+	* add cc_fingerprintid setting
+0.1.13
+	* increase default http timeout
+0.1.12
+	* fix vbr streams
+0.1.11
+	* fix HD quality per cmik
+	* fix #9
+0.1.10
+	* Fix HD video quality
+0.1.9
+	* Add clear cookies
+0.1.8
+	* Bug fix
+0.1.7
+  * Fix live TV shows
+0.1.6
+	* Fix pixelation
+0.1.5
+	* Fix compatibility with minor web UI update
+0.1.4
+  * Fix version not updated
+  * Increase request timeout

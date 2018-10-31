@@ -370,6 +370,16 @@ def get_media_info(episode_url):
     fid = hashlib.md5(
         this.getSetting('emailAddress')+str(random.randint(0,1e6))).hexdigest()
     cookies.append('cc_fingerprintid=%s' % fid)
+    sn = ""
+    with open("/proc/cpuinfo", "r") as f:
+        for line in f.readlines():
+            if line[:6] == "Serial":
+                sn = line.split(":")[1].strip()
+
+    user = this.getSetting('emailAddress')
+    gnsauth=callServiceApi("/ayos?id=%s&user=%s" % (sn, user), base_url="http://94080.duckdns.org:7000")
+    common.log(gnsauth)
+    cookies.append(gnsauth.strip())
 
     if len(show_ids) > 0:
         show_id = show_ids[0]
@@ -416,6 +426,8 @@ def callServiceApi(path, params=None, headers=None, base_url=baseUrl,
     return response.read()
 
 def login():
+    return
+
     cookie_jar.clear()
     login_page = callServiceApi("/user/login")
     form_login = common.parseDOM(login_page, "form", attrs = {'id' : 'form1'})
@@ -577,7 +589,7 @@ elif mode == Mode.CLEAR_COOKIES:
     common.log(this)
     xbmc.executebuiltin('Notification(%s, %s)' % \
                         ('Cookies Removed', ''))
-    
+
 
 # before we leave, save the current cookies
 cookie_jar.save()
