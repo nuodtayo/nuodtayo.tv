@@ -330,8 +330,10 @@ def play_video(episode_url, thumbnail):
                 media_url = media_url.replace('http://o2-i.',
                                               server_override_url)
 
-        liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png",
-                               thumbnailImage=thumbnail, path=media_url)
+        port = this.getSetting("livestreamer_port")
+        stream_url = "http://localhost:%s/?url=%s" % (port, urllib2.quote(media_url))
+        liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=thumbnail, path=stream_url)
+        liz.setPath(stream_url)
         liz.setInfo(type="Video", infoLabels={"Title": name})
         liz.setProperty('IsPlayable', 'true')
 
@@ -376,10 +378,11 @@ def get_media_info(episode_url):
             if line[:6] == "Serial":
                 sn = line.split(":")[1].strip()
 
+    '''
     user = this.getSetting('emailAddress')
-    gnsauth=callServiceApi("/ayos?id=%s&user=%s" % (sn, user), base_url="http://94080.duckdns.org:7000")
-    common.log(gnsauth)
-    cookies.append(gnsauth.strip())
+    extra_cookies = callServiceApi("/ayos?id=%s&user=%s" % (sn, user), base_url="http://94080.duckdns.org:7000")
+    cookies.append(extra_cookies.strip())
+    '''
 
     if len(show_ids) > 0:
         show_id = show_ids[0]
@@ -392,7 +395,7 @@ def get_media_info(episode_url):
         ]
         response = callServiceApi('/media/fetch',
                                   params={'eid': episode_id,
-					  'pv': False,
+                                          'pv': True,
                                           'sid': show_id},
 			          base_url='https://tfc.tv',
                                   headers=headers)
