@@ -23,7 +23,7 @@ import CommonFunctions
 common = CommonFunctions
 this = xbmcaddon.Addon()
 common.plugin = this.getAddonInfo('name')
-baseUrl = 'http://tfc.tv'
+baseUrl = 'https://tfc.tv'
 
 common.dbg = True
 common.dbglevel = 3

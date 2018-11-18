@@ -31,7 +31,13 @@ def debug(s):
 
 class ProxyHandler(SimpleHTTPRequestHandler):
 
+    def do_HEAD(self):
+        self._handle(is_get=False)
+
     def do_GET(self):
+        self._handle(is_get=True)
+
+    def _handle(self, is_get):
 
         q = urlparse.parse_qs(urlparse.urlparse(self.path).query)
         url = q["url"][0]
@@ -41,14 +47,14 @@ class ProxyHandler(SimpleHTTPRequestHandler):
         for h in self.headers:
             if h in ["icy-metadata", "range"] or h in headers:
                 continue
-            headers[h] = self.headers[h] 
+            headers[h] = self.headers[h]
 
         debug("HEADERS: %s\n" %  headers)
         debug("%s\n" % url)
 
         s = requests.Session()
         res = s.get(url, headers=headers)
-        
+
         debug("Response length: %d\n" % len(res.content))
         debug("Content Type: %s\n" % res.headers["Content-Type"])
 
@@ -65,15 +71,15 @@ class ProxyHandler(SimpleHTTPRequestHandler):
                     if m:
                         line = "%sURI=\"http://localhost:1704/?url=%s\"" % (m.group(1),
                                                                             urllib2.quote(m.group(2)))
-                    
+
                 out.append(line)
-            self.send(res, '\n'.join(out))
+            self.send(res, '\n'.join(out), is_get)
         else:
-            self.send(res, body)
+            self.send(res, body, is_get)
 
         debug("EXIT\n")
 
-    def send(self, res, body):
+    def send(self, res, body, is_get):
 
         # headers
         self.send_response(res.status_code, res.reason)
@@ -86,8 +92,9 @@ class ProxyHandler(SimpleHTTPRequestHandler):
             else:
                 self.send_header(h, res.headers[h])
         self.end_headers()
-        self.wfile.write(body)
-        
+
+        if is_get:
+            self.wfile.write(body)
 
 def start():
     if XBMC:
