@@ -331,7 +331,7 @@ def play_video(episode_url, thumbnail):
                                               server_override_url)
 
         port = this.getSetting("livestreamer_port")
-        stream_url = "http://localhost:%s/?url=%s" % (port, urllib2.quote(media_url))
+        stream_url = "http://localhost:%s/?url=%s" % (port, urllib.quote_plus(media_url))
         liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=thumbnail, path=stream_url)
         liz.setPath(stream_url)
         liz.setInfo(type="Video", infoLabels={"Title": name})
