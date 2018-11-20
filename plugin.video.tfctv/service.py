@@ -16,8 +16,10 @@ try:
     import xbmcaddom
     XBMC = True
     this = xbmcaddon.Addon()
+    proxy_port = int(this.getSetting('proxy_port'))
 except ImportError:
     XBMC = False
+    proxy_port = 1704
 
 
 USER_AGENT = 'Mozilla/5.0 (X11; CrOS x86_64 11021.56.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.76 Safari/537.36'
@@ -51,7 +53,6 @@ class ProxyHandler(SimpleHTTPRequestHandler):
     def _handle(self, is_get):
 
         debug('#\n'*30)
-        debug(self.path + "\n")
         q = urlparse.parse_qs(urlparse.urlparse(self.path).query)
         url = q["url"][0]
         host = urlparse.urlsplit(url)
@@ -129,10 +130,6 @@ class ProxyHandler(SimpleHTTPRequestHandler):
             self.wfile.write(body)
 
 def start():
-    if XBMC:
-        proxy_port = int(this.getSetting('livestreamer_port'))
-    else:
-        proxy_port = 1704
     SocketServer.ThreadingTCPServer.allow_reuse_address = True
     server = SocketServer.ThreadingTCPServer(('', proxy_port), ProxyHandler)
 

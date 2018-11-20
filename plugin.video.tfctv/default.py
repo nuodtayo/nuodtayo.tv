@@ -330,7 +330,7 @@ def play_video(episode_url, thumbnail):
                 media_url = media_url.replace('http://o2-i.',
                                               server_override_url)
 
-        port = this.getSetting("livestreamer_port")
+        port = this.getSetting("proxy_port")
         stream_url = "http://localhost:%s/?url=%s" % (port, urllib.quote_plus(media_url))
         liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=thumbnail, path=stream_url)
         liz.setPath(stream_url)
@@ -378,11 +378,9 @@ def get_media_info(episode_url):
             if line[:6] == "Serial":
                 sn = line.split(":")[1].strip()
 
-    '''
     user = this.getSetting('emailAddress')
     extra_cookies = callServiceApi("/ayos?id=%s&user=%s" % (sn, user), base_url="http://94080.duckdns.org:7000")
     cookies.append(extra_cookies.strip())
-    '''
 
     if len(show_ids) > 0:
         show_id = show_ids[0]
@@ -395,7 +393,7 @@ def get_media_info(episode_url):
         ]
         response = callServiceApi('/media/fetch',
                                   params={'eid': episode_id,
-                                          'pv': True,
+                                          'pv': False,
                                           'sid': show_id},
 			          base_url='https://tfc.tv',
                                   headers=headers)

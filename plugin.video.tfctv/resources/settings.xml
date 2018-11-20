@@ -13,6 +13,7 @@
         <setting type="sep" />
         <setting id="server_override_enable" type="bool" label="50205" default="false"/>
         <setting id="server_override_url" type="text" label="50206" default="https://o4-vh."/>
+        <setting id="proxy_port" type="number" label="50207" default="1704"/>
         <setting id="fid" type="text" label="50204" default="041717" option="hidden"/>
     </category>
 </settings>

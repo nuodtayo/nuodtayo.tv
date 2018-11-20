@@ -11,11 +11,11 @@
     <string id="50200">TFC.tv Account</string>
     <string id="50201">Email Address</string>
     <string id="50202">Password</string>
-    
     <string id="50203">Login Retries</string>
     <string id="50204">FID</string>
     <string id="50205">Server Override Enable</string>
     <string id="50206">Server Override URL</string>
+    <string id="50207">Proxy Port</string>
 
     <string id="56000">Login Failed</string>
     <string id="56001">'TFC.tv Subscription Information'</string>

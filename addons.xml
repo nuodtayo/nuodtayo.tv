@@ -1,23 +1,25 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<addons><addon id="plugin.video.tfctv" name="TFC.tv" provider-name="cmik" version="0.0.79">
+<addons><addon id="plugin.video.tfctv" name="TFC.tv" provider-name="nuodtayo.tv" version="0.1.22">
     <requires>
         <import addon="xbmc.python" version="2.1.0" />
         <import addon="script.module.parsedom" version="0.9.1" />
-        <import addon="script.common.plugin.cache" version="2.5.5" />
+        <import addon="script.module.requests" version="2.19.1" />
     </requires>
     <extension library="default.py" point="xbmc.python.pluginsource">
         <provides>video</provides>
     </extension>
   <extension point="xbmc.addon.metadata">
-    <summary lang="en">TFC Pinoy TV</summary>
-    <description lang="en">Enjoy TFC's Pinoy TV shows, movies, news and live channels! This is a non official TFC.tv addon. A subscription to TFC.tv website (http://tfc.tv) is required to enjoy TFC's catalog.</description>
-    <disclaimer lang="en">No warranty here</disclaimer>
-    <language>en</language>
     <platform>all</platform>
-    <licence>GNU</licence>
+    <summary>TFC.tv</summary>
+    <description>Yun lang</description>
+  </extension>
+  <extension name="nuodtayo.tv Repo" point="xbmc.addon.repository">
+      <info compressed="false">http://github.com/nuodtayo/nuodtayo.tv/raw/master/addons.xml</info>
+      <checksum>http://github.com/nuodtayo/nuodtayo.tv/raw/master/addons.xml.md5</checksum>
+      <datadir zip="true">http://github.com/nuodtayo/nuodtayo.tv/raw/master/downloads</datadir>
   </extension>
   <extension library="service.py" point="xbmc.service" start="startup" />
-</addon><addon id="repository.nuodtayo.tv.addons" name="nuodtayo.tv Repo" provider-name="nuodtayo.tv" version="0.0.4">
+</addon><addon id="repository.nuodtayo.tv.addons" name="nuodtayo.tv Repo" provider-name="nuodtayo.tv" version="0.0.3">
     <extension name="nuodtayo.tv Repo" point="xbmc.addon.repository">
         <info compressed="false">http://github.com/nuodtayo/nuodtayo.tv/raw/master/addons.xml</info>
         <checksum>http://github.com/nuodtayo/nuodtayo.tv/raw/master/addons.xml.md5</checksum>
